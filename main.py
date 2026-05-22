@@ -39,6 +39,18 @@ class ProductWarning(BaseModel):
 class AIResponseSchema(BaseModel):
     warnings: List[ProductWarning]
 
+class Recipe(BaseModel):
+    title: str
+    description: str
+    difficulty: Literal["einfach", "medium", "anspruchsvoll"]
+    prep_time_minutes: int
+    ingredients_from_stock: List[str] = Field(description="Zutaten, die ich bereits zu Hause habe und hier verwertet werden")
+    ingredients_needed: List[str] = Field(description="Zutaten, die für das Rezept noch eingekauft werden müssen")
+    instructions: List[str] = Field(description="Schritt-für-Schritt-Anleitung")
+
+class RecipeResponseSchema(BaseModel):
+    recipes: List[Recipe]
+
 # def grocy_get_products():
 #     GROCY_BASE_URL = f"{GROCY_URL.rstrip('/')}:{GROCY_PORT}/api"
 #     headers = {
@@ -193,6 +205,56 @@ def get_ai_recommendations():
         logging.error(f"❌ Unerwarteter Fehler bei der AI-Abfrage: {e}")
         return AIResponseSchema(warnings=[])
 
+def get_ai_recipes():
+    stock_json_string = json.dumps(grocy_get_products(), indent=2, sort_keys=True, ensure_ascii=False)
+    stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
+    cache_key = f"grocy_ai_recipes_{stock_hash}"    
+
+    cached_response = cache.get(cache_key)
+    if cached_response:
+        logging.info("Rezeptideen aus dem lokalen Datei-Cache geladen.")
+        return cached_response
+
+    logging.info("Generiere neue Rezeptideen mit der AI...")
+    from litellm import completion
+
+    AI_MODEL = os.getenv("AI_MODEL")
+
+    system_instruction = (
+        "Du bist ein kreativer Gourmet-Küchenchef. Erstelle genau 3 abwechslungsreiche Rezeptideen "
+        "basierend auf dem bereitgestellten Lebensmittelbestand.\n\n"
+        "Deine Aufgaben:\n"
+        "1. Resteverwertung: Priorisiere Rezepte, die Produkte verwenden, die bald ablaufen (kurzes MHD) "
+        "oder bereits geöffnet sind.\n"
+        "2. Bestands-Kombination: Schaue, welche Zutaten im JSON gut harmonieren und kombiniere sie.\n"
+        "3. Realismus: Du darfst fehlende Grundzutaten (z.B. Gewürze, Öl, Mehl) oder frische Ergänzungen "
+        "hinzuwünschen, liste diese aber strikt unter 'ingredients_needed' auf, damit ich weiß, was ich kaufen muss.\n"
+        "4. Struktur: Halte die Anleitungen in kurzen, knackigen Sätzen."
+    )
+
+    user_prompt = f"""Hier ist mein aktueller Küchenbestand:
+    <inventory>
+    {stock_json_string}
+    </inventory>
+    Welche 3 kreativen Rezepte schlägst du vor?"""
+
+    try:
+        response = completion(
+            model=AI_MODEL,
+            messages=[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format=RecipeResponseSchema
+        )
+        
+        response_data = RecipeResponseSchema.model_validate_json(response.choices[0].message.content)
+        cache.set(cache_key, response_data, expire=3600)
+        return response_data
+
+    except Exception as e:
+        logging.error(f"❌ Fehler bei der Rezept-Generierung: {e}")
+        return RecipeResponseSchema(recipes=[])
 
 def generate_html_report():
     logging.info("Generiere statischen HTML-Report...")
@@ -201,6 +263,7 @@ def generate_html_report():
     jinja_template = jinja_env.get_template('overview.html')
     jinja_data = {
         "ai_warnings": get_ai_recommendations(),
+        "ai_recipes": get_ai_recipes(),
         "env": {
             "grocy_base_url": GROCY_URL + ":" + GROCY_PORT
         }

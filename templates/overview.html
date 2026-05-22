@@ -106,6 +106,64 @@
         {% else %}
         <ins>Alles super! Keine kritischen Bestände oder Warnungen gefunden.</ins>
         {% endif %}
+
+        <hr style="margin-top: 3rem; margin-bottom: 3rem;">
+
+        <header style="margin-bottom: 2rem;">
+            <h2>🍳 Rezeptideen zur Resteverwertung</h2>
+            <p>Passend zu deinem aktuellen Kühlschrank-Inhalt zusammengestellt.</p>
+        </header>
+
+        {% if data.ai_recipes.recipes %}
+        <div class="grid">
+            {% for recipe in data.ai_recipes.recipes %}
+            <article>
+                <header>
+                    <strong>{{ recipe.title }}</strong><br>
+                    <small class="muted">⏱️ {{ recipe.prep_time_minutes }} Min. | 🧑‍🍳 {{ recipe.difficulty | capitalize }}</small>
+                </header>
+                
+                <p style="font-size: 0.9rem; margin-bottom: 1rem;">
+                    <em>{{ recipe.description }}</em>
+                </p>
+
+                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
+                    <div>
+                        <strong style="font-size: 0.85rem;">✅ Aus dem Vorrat:</strong>
+                        <ul style="font-size: 0.85rem; padding-left: 1rem; margin-top: 5px;">
+                            {% for ingredient in recipe.ingredients_from_stock %}
+                            <li>{{ ingredient }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div>
+                        <strong style="font-size: 0.85rem;">🛒 Noch einkaufen:</strong>
+                        <ul style="font-size: 0.85rem; padding-left: 1rem; margin-top: 5px;">
+                            {% if recipe.ingredients_needed %}
+                                {% for ingredient in recipe.ingredients_needed %}
+                                <li>{{ ingredient }}</li>
+                                {% endfor %}
+                            {% else %}
+                                <li><ins>Nichts! Alles da.</ins></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <details>
+                    <summary><strong>Zubereitung anzeigen</strong></summary>
+                    <ol style="font-size: 0.9rem; margin-top: 10px;">
+                        {% for step in recipe.instructions %}
+                        <li style="margin-bottom: 5px;">{{ step }}</li>
+                        {% endfor %}
+                    </ol>
+                </details>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p><ins>Aktuell konnten keine Rezeptideen generiert werden.</ins></p>
+        {% endif %}
     </main>
 </body>
 </html>
