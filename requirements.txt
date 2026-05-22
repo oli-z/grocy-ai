@@ -1,0 +1,5 @@
+dotenv
+grocy-py
+litellm
+jinja2
+diskcache

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocy AI Bestandsanalyse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        .severity-4 { color: #d32f2f; font-weight: bold; }
+        .severity-3 { color: #f57c00; font-weight: bold; }
+        .severity-2 { color: #fbc02d; }
+        .severity-1 { color: #388e3c; }
+
+        /* Dezente Zeilenhintergründe je nach Severity (transparent, damit Text lesbar bleibt) */
+        .row-sev-4 td { background-color: rgba(211, 47, 47, 0.08) !important; }  /* Rot */
+        .row-sev-3 td { background-color: rgba(245, 124, 0, 0.08) !important; }  /* Orange */
+        .row-sev-2 td { background-color: rgba(251, 192, 45, 0.08) !important; } /* Gelb */
+        .row-sev-1 td { background-color: rgba(56, 142, 60, 0.06) !important; }  /* Grün */
+
+        /* Schöne Badges für die To-Do Aktionen */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .badge-verbrauchen { background-color: #d32f2f; color: white; }
+        .badge-einfrieren { background-color: #1976d2; color: white; }
+        .badge-umlagern { background-color: #f57c00; color: white; }
+        .badge-fehler { background-color: #7b1fa2; color: white; }
+        .badge-keine { background-color: #388e3c; color: white; }
+
+        /* Styling für das einklappbare Detail-Feld in der Tabelle */
+        details summary {
+            font-weight: bold;
+            color: var(--pico-heading-color);
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>Grocy AI Bestandsanalyse</h1>
+            <p><small>Letztes Update: {{ timestamp }}</small></p>
+        </header>
+
+        <hr>
+
+        {% if data.ai_warnings.warnings %}
+        <article>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Priorität</th>
+                        <th style="width: 25%;">Produkt</th>
+                        <th style="width: 45%;">Analyse & Problem</th>
+                        <th style="width: 15%;">Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in data.ai_warnings.warnings %}
+                    <tr class="row-sev-{{ w.warning_severity }}">
+                        <td>
+                            {% if w.warning_severity == 4 %}
+                                <span class="severity-4">🔥 Kritisch</span>
+                            {% elif w.warning_severity == 3 %}
+                                <span class="severity-3">⚠️ Hoch</span>
+                            {% elif w.warning_severity == 2 %}
+                                <span class="severity-2">⏳ Medium</span>
+                            {% else %}
+                                <span class="severity-1">ℹ️ Info</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong><a href="{{ data.env.grocy_base_url }}/stockentries?embedded&product={{ w.product_id }}">{{ w.product_name }}</a></strong>
+                        </td>
+                        <td>
+                            <details>
+                                <summary>{{ w.warning_title }}</summary>
+                                <p style="margin-top: 10px; font-size: 0.95rem;">{{ w.warning_text }}</p>
+                            </details>
+                        </td>
+                        <td>
+{% for action in w.warning_actions %}
+                                {% if action == "verbrauchen" %}
+                                    <span class="badge badge-verbrauchen">🍽️ {{ action }}</span>
+                                {% elif action == "einfrieren" %}
+                                    <span class="badge badge-einfrieren">❄️ {{ action }}</span>
+                                {% elif action == "umlagern" %}
+                                    <span class="badge badge-umlagern">📦 {{ action }}</span>
+                                {% elif action == "Logikfehler/Sinnhaftigkeit prüfen" %}
+                                    <span class="badge badge-fehler">🔍 Fehler prüfen</span>
+                                {% else %}
+                                    <span class="badge badge-keine">✅ {{ action }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+        {% else %}
+        <ins>Alles super! Keine kritischen Bestände oder Warnungen gefunden.</ins>
+        {% endif %}
+    </main>
+</body>
+</html>
