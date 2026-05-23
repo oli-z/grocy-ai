@@ -38,6 +38,7 @@ class ProductWarning(BaseModel):
 
 class AIResponseSchema(BaseModel):
     warnings: List[ProductWarning]
+    description: str = Field(description="Zusammenfassende Beschreibung , wie du den aktuellen Bestand einschätzt, ob gerade viel da ist oder ob ich bald einkaufen muss, und welche generellen Empfehlungen du hast, die nicht in den Details bereits auftauchen.")
 
 class Recipe(BaseModel):
     title: str
@@ -50,36 +51,6 @@ class Recipe(BaseModel):
 
 class RecipeResponseSchema(BaseModel):
     recipes: List[Recipe]
-
-# def grocy_get_products():
-#     GROCY_BASE_URL = f"{GROCY_URL.rstrip('/')}:{GROCY_PORT}/api"
-#     headers = {
-#         "GROCY-API-KEY": GROCY_API_KEY,
-#         "Accept": "application/json"
-#     }
-
-#     logging.info("Lade Standorte...")
-#     loc_response = requests.get(f"{GROCY_BASE_URL}/objects/locations", headers=headers)
-#     if loc_response.status_code != 200:
-#         print(f"Fehler beim Laden der Standorte: {loc_response.status_code}")
-#         exit(1)
-
-#     location_map = {int(loc['id']): loc['name'] for loc in loc_response.json()}
-
-#     logging.info("Lade Produkte...")
-#     products = []
-#     for product in grocy.stock.current():
-#         product2 = {}
-#         product2["id"] = product.id
-#         product2['name'] = product.name
-#         product2['available'] = product.available_amount
-#         product2['opened'] = product.amount_opened
-#         product2['mhd'] = product.best_before_date.strftime("%d.%m.%Y")
-#         product2['location'] = location_map.get(int(product.location_id), "Unbekannter Ort") if product.location_id else "Kein Ort"
-#         products.append(product2)
-#         #print(f"{product.name}: {product.available_amount} in stock")
-
-#     return products
 
 def grocy_get_products():
     GROCY_BASE_URL = f"{GROCY_URL.rstrip('/')}:{GROCY_PORT}/api"
@@ -221,7 +192,7 @@ def get_ai_recipes():
     AI_MODEL = os.getenv("AI_MODEL")
 
     system_instruction = (
-        "Du bist ein kreativer Gourmet-Küchenchef. Erstelle genau 3 abwechslungsreiche Rezeptideen "
+        "Du bist ein kreativer Gourmet-Küchenchef. Erstelle genau 6 abwechslungsreiche Rezeptideen "
         "basierend auf dem bereitgestellten Lebensmittelbestand.\n\n"
         "Deine Aufgaben:\n"
         "1. Resteverwertung: Priorisiere Rezepte, die Produkte verwenden, die bald ablaufen (kurzes MHD) "
@@ -236,7 +207,7 @@ def get_ai_recipes():
     <inventory>
     {stock_json_string}
     </inventory>
-    Welche 3 kreativen Rezepte schlägst du vor?"""
+    Welche 6 kreativen Rezepte schlägst du vor?"""
 
     try:
         response = completion(

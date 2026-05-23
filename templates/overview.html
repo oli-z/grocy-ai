@@ -49,8 +49,16 @@
 
         <hr>
 
+        <article>
+            {{ data.ai_warnings.description }}
+        </article>        
+
         {% if data.ai_warnings.warnings %}
         <article>
+                    <header style="margin-bottom: 2rem;">
+            <h2>⚠️ Warnungen und Hinweise</h2>
+            <p>Hier findest du eine Übersicht über Produkte, die bald ablaufen oder andere Probleme aufweisen, sowie empfohlene Aktionen.</p>
+        </header>
             <table>
                 <thead>
                     <tr>
