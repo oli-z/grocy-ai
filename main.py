@@ -1,5 +1,8 @@
 import sys, logging, os
+from dotenv import load_dotenv
+
 load_dotenv()
+
 LOG_LEVEL_STR = os.environ.get("LOG_LEVEL", "INFO").upper()
 LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
 
@@ -17,7 +20,6 @@ logging.info(f"Logging initialisiert mit Level: {logging.getLevelName(LOG_LEVEL)
 
 logging.debug("Lade Libraries...")
 import json, requests, datetime, hashlib, diskcache
-from dotenv import load_dotenv
 from grocy import Grocy
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, Field
