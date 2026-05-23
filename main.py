@@ -46,7 +46,7 @@ class Recipe(BaseModel):
     difficulty: Literal["einfach", "medium", "anspruchsvoll"]
     prep_time_minutes: int
     ingredients_from_stock: List[str] = Field(description="Zutaten, die ich bereits zu Hause habe und hier verwertet werden")
-    ingredients_needed: List[str] = Field(description="Zutaten, die für das Rezept noch eingekauft werden müssen")
+    ingredients_needed: List[str] = Field(description="Zutaten, die für das Rezept noch eingekauft werden müssen, Optionale bitte markieren")
     instructions: List[str] = Field(description="Schritt-für-Schritt-Anleitung")
 
 class RecipeResponseSchema(BaseModel):
@@ -199,7 +199,7 @@ def get_ai_recipes():
         "oder bereits geöffnet sind.\n"
         "2. Bestands-Kombination: Schaue, welche Zutaten im JSON gut harmonieren und kombiniere sie.\n"
         "3. Realismus: Du darfst fehlende Grundzutaten (z.B. Gewürze, Öl, Mehl) oder frische Ergänzungen "
-        "hinzuwünschen, liste diese aber strikt unter 'ingredients_needed' auf, damit ich weiß, was ich kaufen muss.\n"
+        "hinzuwünschen, liste diese aber strikt unter 'ingredients_needed' auf, damit ich weiß, was ich kaufen muss. Wenn es geht, priorisiere aber Zutaten, welche schon da sind. \n"
         "4. Struktur: Halte die Anleitungen in kurzen, knackigen Sätzen."
     )
 
