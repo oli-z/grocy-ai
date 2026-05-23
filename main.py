@@ -1,7 +1,10 @@
-import sys, logging
+import sys, logging, os
+load_dotenv()
+LOG_LEVEL_STR = os.environ.get("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
 
 logging.basicConfig(
-    level=logging.DEBUG, # Minimales Log-Level (alles darunter, wie DEBUG, wird ignoriert)
+    level=LOG_LEVEL,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%d.%m.%Y %H:%M:%S",
     handlers=[
@@ -10,8 +13,10 @@ logging.basicConfig(
     ]
 )
 
+logging.info(f"Logging initialisiert mit Level: {logging.getLevelName(LOG_LEVEL)}")
+
 logging.debug("Lade Libraries...")
-import os, json, requests, datetime, hashlib, diskcache
+import json, requests, datetime, hashlib, diskcache
 from dotenv import load_dotenv
 from grocy import Grocy
 from jinja2 import Environment, FileSystemLoader
@@ -19,7 +24,6 @@ from pydantic import BaseModel, Field
 from typing import List, Literal
 
 logging.debug("Lade Konfig...")
-load_dotenv()
 
 GROCY_URL = os.getenv("GROCY_URL")
 GROCY_PORT = os.getenv("GROCY_PORT")
