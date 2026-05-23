@@ -123,7 +123,7 @@
         </header>
 
         {% if data.ai_recipes.recipes %}
-        <div class="grid">
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--pico-block-spacing-horizontal);">
             {% for recipe in data.ai_recipes.recipes %}
             <article>
                 <header>
