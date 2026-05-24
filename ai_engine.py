@@ -12,17 +12,18 @@ class AIEngine:
         self.cache = cache
         self.ai_model = ai_model
 
-    def get_recommendations(self):
+    def get_recommendations(self, force_refresh: bool = False):
         stock_json_string = json.dumps(self.grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)
         logging.debug(stock_json_string)
         stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
         
         cache_key = f"grocy_ai_warnings_{stock_hash}"    
 
-        cached_response = self.cache.get(cache_key)
-        if cached_response:
-            logging.info("Warnungen aus dem lokalen Datei-Cache geladen.")
-            return cached_response
+        if not force_refresh:
+            cached_response = self.cache.get(cache_key)
+            if cached_response:
+                logging.info("Warnungen aus dem lokalen Datei-Cache geladen.")
+                return cached_response
 
         logging.info("Cache abgelaufen oder nicht verfügbar, frage AI ab...")
         
@@ -49,15 +50,16 @@ class AIEngine:
             logging.error(f"❌ Fehler bei der AI-Abfrage (Warnungen): {e}")
             return AIResponseSchema(warnings=[])
 
-    def get_recipes(self):
+    def get_recipes(self, force_refresh: bool = False):
         stock_json_string = json.dumps(self.grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)
         stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
-        cache_key = f"grocy_ai_recipes_{stock_hash}"    
+        cache_key = f"grocy_ai_recipes_{stock_hash}"
 
-        cached_response = self.cache.get(cache_key)
-        if cached_response:
-            logging.info("Rezeptideen aus dem lokalen Datei-Cache geladen.")
-            return cached_response
+        if not force_refresh:
+            cached_response = self.cache.get(cache_key)
+            if cached_response:
+                logging.info("Rezeptideen aus dem lokalen Datei-Cache geladen.")
+                return cached_response
 
         logging.info("Generiere neue Rezeptideen mit der AI...")
 

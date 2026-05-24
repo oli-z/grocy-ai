@@ -1,4 +1,4 @@
-from config import GROCY_URL, GROCY_PORT, logging, cache, grocy
+from config import logging, cache, grocy
 from ai_engine import AIEngine
 
 logging.debug("Lade Libraries...")
