@@ -1,9 +1,15 @@
+from aiohttp import request
+
 from config import logging, cache, grocy
+from models import AIResponseSchema, RecipeResponseSchema
 from ai_engine import AIEngine
 
 logging.debug("Lade Libraries...")
 import datetime, os
 from jinja2 import Environment, FileSystemLoader
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 def generate_html_report():
     logging.info("Generiere statischen HTML-Report...")
@@ -37,4 +43,35 @@ def generate_html_report():
     
     logging.info(f"Erfolgreich generiert: {os.path.abspath(output_path)}")
 
-generate_html_report()
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=os.getenv("AI_MODEL"))
+
+# @app.get("/")
+# async def dashboard(request: Request, refresh: bool = False):
+#     warnings_data = engine.get_recommendations(force_refresh=refresh)
+#     recipes_data = engine.get_recipes(force_refresh=refresh)
+    
+#     return templates.TemplateResponse(
+#         request=request,
+#         name="overview.html",
+#         context={
+#             "data": {
+#                 "ai_warnings": warnings_data,
+#                 "ai_recipes": recipes_data,
+#                 "env": {"grocy_base_url": grocy.frontend_url}
+#             }
+#         }
+#     )
+
+@app.get("/api/warnings", response_model=AIResponseSchema)
+async def api_get_warnings(refresh: bool = False):
+    """Liefert nur die Warnungen als reines JSON zurück."""
+    return engine.get_recommendations(force_refresh=refresh)
+
+@app.get("/api/recipes", response_model=RecipeResponseSchema)
+async def api_get_recipes(refresh: bool = False):
+    """Liefert nur die Rezepte als reines JSON zurück."""
+    return engine.get_recipes(force_refresh=refresh)
+
+app.mount("/", StaticFiles(directory="static", html="index.html"), name="static")

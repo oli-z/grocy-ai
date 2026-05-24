@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocy AI Bestandsanalyse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        .severity-4 {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .severity-3 {
+            color: #f57c00;
+            font-weight: bold;
+        }
+
+        .severity-2 {
+            color: #fbc02d;
+        }
+
+        .severity-1 {
+            color: #388e3c;
+        }
+
+        .row-sev-4 td {
+            background-color: rgba(211, 47, 47, 0.08) !important;
+        }
+
+        .row-sev-3 td {
+            background-color: rgba(245, 124, 0, 0.08) !important;
+        }
+
+        .row-sev-2 td {
+            background-color: rgba(251, 192, 45, 0.08) !important;
+        }
+
+        .row-sev-1 td {
+            background-color: rgba(56, 142, 60, 0.06) !important;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .badge-verbrauchen {
+            background-color: #d32f2f;
+            color: white;
+        }
+
+        .badge-einfrieren {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .badge-umlagern {
+            background-color: #f57c00;
+            color: white;
+        }
+
+        .badge-fehler {
+            background-color: #7b1fa2;
+            color: white;
+        }
+
+        .badge-keine {
+            background-color: #388e3c;
+            color: white;
+        }
+
+        details summary {
+            font-weight: bold;
+            color: var(--pico-heading-color);
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body class="container" x-data="grocyApp()">
+
+    <main class="container">
+        <header>
+            <h1>Grocy AI Bestandsanalyse</h1>
+
+            <div class="grid">
+                <button @click="loadWarnings(false)" :aria-busy="loadingWarnings">⚠️ Warnungen aktualisieren</button>
+                <button class="secondary" @click="loadRecipes(true)" :aria-busy="loadingRecipes">🎲 Rezepte neu
+                    würfeln</button>
+            </div>
+        </header>
+
+        <hr>
+
+        <section :aria-busy="loadingWarnings">
+            <h2>⚠️ Warnungen und Hinweise</h2>
+            <p>Hier findest du eine Übersicht über Produkte, die bald ablaufen oder andere Probleme aufweisen.</p>
+
+            <template x-if="warnings.length > 0">
+                <article>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Priorität</th>
+                                <th style="width: 25%;">Produkt</th>
+                                <th style="width: 45%;">Analyse & Problem</th>
+                                <th style="width: 15%;">Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="w in warnings" :key="w.product_id">
+                                <tr :class="'row-sev-' + w.warning_severity">
+                                    <td>
+                                        <span :class="'severity-' + w.warning_severity"
+                                            x-text="getSeverityLabel(w.warning_severity)"></span>
+                                    </td>
+                                    <td>
+                                        <strong>
+                                            <a :href="grocyBaseUrl + '/stockentries?embedded&product=' + w.product_id]"
+                                                x-text="w.product_name" target="_blank"></a>
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <details>
+                                            <summary x-text="w.warning_title"></summary>
+                                            <p style="margin-top: 10px; font-size: 0.95rem;" x-text="w.warning_text">
+                                            </p>
+                                        </details>
+                                    </td>
+                                    <td>
+                                        <template x-for="action in w.warning_actions">
+                                            <span class="badge" :class="badgeMap[action]?.class || 'badge-keine'"
+                                                x-text="badgeMap[action]?.text || '✅ ' + action">
+                                            </span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </article>
+            </template>
+
+            <template x-if="warnings.length === 0 && !loadingWarnings">
+                <ins>Alles super! Keine kritischen Bestände oder Warnungen gefunden.</ins>
+            </template>
+        </section>
+
+        <hr style="margin-top: 3rem; margin-bottom: 3rem;">
+
+        <section :aria-busy="loadingRecipes">
+            <h2>🍳 Rezeptideen zur Resteverwertung</h2>
+            <p>Passend zu deinem aktuellen Kühlschrank-Inhalt zusammengestellt.</p>
+
+            <template x-if="recipes.length > 0">
+                <div class="grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--pico-block-spacing-horizontal);">
+                    <template x-for="recipe in recipes">
+                        <article>
+                            <header>
+                                <strong x-text="recipe.title"></strong><br>
+                                <small class="muted">⏱️ <span x-text="recipe.prep_time_minutes"></span> Min. | 🧑‍🍳
+                                    <span x-text="recipe.difficulty"></span></small>
+                            </header>
+
+                            <p style="font-size: 0.9rem; margin-bottom: 1rem;">
+                                <em x-text="recipe.description"></em>
+                            </p>
+
+                            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
+                                <div>
+                                    <strong style="font-size: 0.85rem;">✅ Aus dem Vorrat:</strong>
+                                    <ul style="font-size: 0.85rem; padding-left: 1rem; margin-top: 5px;">
+                                        <template x-for="ing in recipe.ingredients_from_stock">
+                                            <li x-text="ing"></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong style="font-size: 0.85rem;">🛒 Noch einkaufen:</strong>
+                                    <ul style="font-size: 0.85rem; padding-left: 1rem; margin-top: 5px;">
+                                        <template
+                                            x-if="recipe.ingredients_needed && recipe.ingredients_needed.length > 0">
+                                            <template x-for="ing in recipe.ingredients_needed">
+                                                <li x-text="ing"></li>
+                                            </template>
+                                        </template>
+                                        <template
+                                            x-if="!recipe.ingredients_needed || recipe.ingredients_needed.length === 0">
+                                            <li><ins>Nichts! Alles da.</ins></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <button class="outline" @click="activeRecipe = recipe">Zubereitung anzeigen</button>
+                        </article>
+                    </template>
+                </div>
+            </template>
+
+            <template x-if="recipes.length === 0 && !loadingRecipes">
+                <p><ins>Aktuell konnten keine Rezeptideen generiert werden.</ins></p>
+            </template>
+        </section>
+    </main>
+
+    <dialog :open="activeRecipe !== null">
+        <article>
+            <header>
+                <a href="#close" aria-label="Close" class="close" @click="activeRecipe = null"></a>
+                <h3 x-text="activeRecipe?.title"></h3>
+            </header>
+            <p><strong>Schritte zur Zubereitung:</strong></p>
+            <ol style="font-size: 0.9rem;">
+                <template x-for="step in activeRecipe?.instructions">
+                    <li style="margin-bottom: 5px;" x-text="step"></li>
+                </template>
+            </ol>
+            <footer>
+                <button class="secondary" @click="activeRecipe = null">Schließen</button>
+            </footer>
+        </article>
+    </dialog>
+
+    <script>
+        function grocyApp() {
+            return {
+                warnings: [],
+                recipes: [],
+                loadingWarnings: false,
+                loadingRecipes: false,
+                activeRecipe: null,
+
+                grocyBaseUrl: 'http://localhost:8080',
+
+                badgeMap: {
+                    "verbrauchen": { class: "badge-verbrauchen", text: "🍽️ verbrauchen" },
+                    "einfrieren": { class: "badge-einfrieren", text: "❄️ einfrieren" },
+                    "umlagern": { class: "badge-umlagern", text: "📦 umlagern" },
+                    "Logikfehler/Sinnhaftigkeit prüfen": { class: "badge-fehler", text: "🔍 Fehler prüfen" }
+                },
+
+                init() {
+                    this.loadWarnings(false);
+                    this.loadRecipes(false);
+                },
+
+                async loadWarnings(forceRefresh) {
+                    this.loadingWarnings = true;
+                    try {
+                        let response = await fetch(`/api/warnings?refresh=${forceRefresh}`);
+                        let data = await response.json();
+                        this.warnings = data.warnings || [];
+                        this.updateTimestamp();
+                    } catch (error) {
+                        console.error("Fehler bei den Warnungen:", error);
+                    } finally {
+                        this.loadingWarnings = false;
+                    }
+                },
+
+                async loadRecipes(forceRefresh) {
+                    this.loadingRecipes = true;
+                    try {
+                        let response = await fetch(`/api/recipes?refresh=${forceRefresh}`);
+                        let data = await response.json();
+                        this.recipes = data.recipes || [];
+                        this.updateTimestamp();
+                    } catch (error) {
+                        console.error("Fehler bei den Rezepten:", error);
+                    } finally {
+                        this.loadingRecipes = false;
+                    }
+                },
+
+                getSeverityLabel(severity) {
+                    const labels = {
+                        4: '🔥 Kritisch',
+                        3: '⚠️ Hoch',
+                        2: '⏳ Medium',
+                        1: 'ℹ️ Info'
+                    };
+                    return labels[severity] || 'ℹ️ Info';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
