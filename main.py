@@ -1,6 +1,6 @@
 from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT
 from models import AIResponseSchema, RecipeResponseSchema
-from config import GROCY_URL, GROCY_PORT, GROCY_API_KEY, logging, cache, grocy
+from config import GROCY_URL, GROCY_PORT, GROCY_API_KEY, logging, cache
 
 logging.debug("Lade Libraries...")
 import json, requests, datetime, hashlib, os
