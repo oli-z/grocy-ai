@@ -1,6 +1,7 @@
 .env
 .venv
 .vscode
+__pycache__/*
 cache/*
 logs/*
 output/*
