@@ -22,7 +22,7 @@ def generate_html_report():
         "ai_warnings": warnings_data,
         "ai_recipes": recipes_data,
         "env": {
-            "grocy_base_url": GROCY_URL + ":" + GROCY_PORT
+            "grocy_base_url": grocy.frontend_url
         }
     }
     now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")

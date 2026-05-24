@@ -4,7 +4,8 @@ import re
 
 class GrocyApiClient:
     def __init__(self, base_url: str, port: str, api_key: str):
-        self.base_url = f"{base_url.rstrip('/')}:{port}/api"
+        self.frontend_url = f"{base_url.rstrip('/')}:{port}"
+        self.base_url = f"{self.frontend_url}/api"
         self.headers = {
             "GROCY-API-KEY": api_key,
             "Accept": "application/json"
