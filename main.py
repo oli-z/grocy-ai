@@ -1,64 +1,12 @@
-import sys, logging, os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-LOG_LEVEL_STR = os.environ.get("LOG_LEVEL", "INFO").upper()
-LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
-
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%d.%m.%Y %H:%M:%S",
-    handlers=[
-        logging.FileHandler("logs/grocy_ai.log", encoding="utf-8"), # In Datei schreiben
-        logging.StreamHandler(sys.stdout)                             # Auf Konsole ausgeben
-    ]
-)
-
-logging.info(f"Logging initialisiert mit Level: {logging.getLevelName(LOG_LEVEL)}")
+from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT
+from models import AIResponseSchema, RecipeResponseSchema
+from config import GROCY_URL, GROCY_PORT, GROCY_API_KEY, logging, cache, grocy
 
 logging.debug("Lade Libraries...")
-import json, requests, datetime, hashlib, diskcache
-from grocy import Grocy
+import json, requests, datetime, hashlib, os
 from jinja2 import Environment, FileSystemLoader
-from pydantic import BaseModel, Field
-from typing import List, Literal
 
-from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT
 
-logging.debug("Lade Konfig...")
-
-GROCY_URL = os.getenv("GROCY_URL")
-GROCY_PORT = os.getenv("GROCY_PORT")
-GROCY_API_KEY = os.getenv("GROCY_API_KEY")
-
-cache = diskcache.Cache('cache')
-grocy = Grocy(GROCY_URL, GROCY_API_KEY, port=GROCY_PORT)
-
-class ProductWarning(BaseModel):
-    product_id: int
-    product_name: str
-    warning_severity: int = Field(..., ge=1, le=4, description="1=gering, 4=kritisch")
-    warning_title: str
-    warning_text: str
-    warning_actions: List[Literal["umlagern", "verbrauchen", "einfrieren", "keine Aktion", "Logikfehler/Sinnhaftigkeit prüfen"]]
-
-class AIResponseSchema(BaseModel):
-    warnings: List[ProductWarning]
-    description: str = Field(description="Zusammenfassende Beschreibung , wie du den aktuellen Bestand einschätzt, ob gerade viel da ist oder ob ich bald einkaufen muss, und welche generellen Empfehlungen du hast, die nicht in den Details bereits auftauchen.")
-
-class Recipe(BaseModel):
-    title: str
-    description: str
-    difficulty: Literal["einfach", "medium", "anspruchsvoll"]
-    prep_time_minutes: int
-    ingredients_from_stock: List[str] = Field(description="Zutaten, die ich bereits zu Hause habe und hier verwertet werden")
-    ingredients_needed: List[str] = Field(description="Zutaten, die für das Rezept noch eingekauft werden müssen, Optionale bitte markieren")
-    instructions: List[str] = Field(description="Schritt-für-Schritt-Anleitung")
-
-class RecipeResponseSchema(BaseModel):
-    recipes: List[Recipe]
 
 def grocy_get_products():
     GROCY_BASE_URL = f"{GROCY_URL.rstrip('/')}:{GROCY_PORT}/api"
