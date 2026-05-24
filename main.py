@@ -1,67 +1,13 @@
 from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT
 from models import AIResponseSchema, RecipeResponseSchema
-from config import GROCY_URL, GROCY_PORT, GROCY_API_KEY, logging, cache
+from config import GROCY_URL, GROCY_PORT, GROCY_API_KEY, logging, cache, grocy
 
 logging.debug("Lade Libraries...")
 import json, requests, datetime, hashlib, os
 from jinja2 import Environment, FileSystemLoader
 
-
-
-def grocy_get_products():
-    GROCY_BASE_URL = f"{GROCY_URL.rstrip('/')}:{GROCY_PORT}/api"
-    headers = {
-        "GROCY-API-KEY": GROCY_API_KEY,
-        "Accept": "application/json"
-    }
-
-    logging.info("Lade Standorte...")
-    loc_response = requests.get(f"{GROCY_BASE_URL}/objects/locations", headers=headers)
-    location_map = {int(loc['id']): loc['name'] for loc in loc_response.json()}
-
-    logging.info("Lade Produkt-Stammdaten...")
-    prod_response = requests.get(f"{GROCY_BASE_URL}/objects/products", headers=headers)
-    product_map = {int(p['id']): p['name'] for p in prod_response.json()}
-
-    logging.info("Lade physischen Bestand (Splits & MHDs)...")
-    # objects/stock liefert jede einzelne Charge/MHD als eigene Zeile!
-    stock_response = requests.get(f"{GROCY_BASE_URL}/objects/stock", headers=headers)
-    
-    products = []
-    for entry in stock_response.json():
-        amount = float(entry.get('amount', 0))
-        if amount <= 0:
-            continue
-            
-        product_id = int(entry['product_id'])
-        
-        # MHD sauber formatieren
-        raw_mhd = entry.get('best_before_date')
-        if raw_mhd and raw_mhd.startswith("2999"): 
-            mhd_str = "Kein MHD"
-        elif raw_mhd:
-            date_part = raw_mhd.split(" ")[0].split("-")
-            if len(date_part) == 3:
-                mhd_str = f"{date_part[2]}.{date_part[1]}.{date_part[0]}"
-            else:
-                mhd_str = raw_mhd
-        else:
-            mhd_str = "Kein MHD"
-            
-        product_entry = {
-            "id": product_id,
-            "name": product_map.get(product_id, f"Unbekannt ({product_id})"),
-            "available": amount,
-            "opened": entry.get('open', 0),
-            "mhd": mhd_str,
-            "location": location_map.get(int(entry['location_id']), "Unbekannter Ort") if entry.get('location_id') else "Kein Ort"
-        }
-        products.append(product_entry)
-
-    return products
-
 def get_ai_recommendations():
-    stock_json_string = json.dumps(grocy_get_products(), indent=2, sort_keys=True, ensure_ascii=False)
+    stock_json_string = json.dumps(grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)
     logging.debug(stock_json_string)
     stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
     
@@ -107,7 +53,7 @@ def get_ai_recommendations():
         return AIResponseSchema(warnings=[])
 
 def get_ai_recipes():
-    stock_json_string = json.dumps(grocy_get_products(), indent=2, sort_keys=True, ensure_ascii=False)
+    stock_json_string = json.dumps(grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)
     stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
     cache_key = f"grocy_ai_recipes_{stock_hash}"    
 

@@ -1,5 +1,6 @@
 import sys, logging, os, diskcache
 from dotenv import load_dotenv
+from grocy_client import GrocyApiClient
 
 load_dotenv()
 
@@ -24,3 +25,4 @@ GROCY_PORT = os.getenv("GROCY_PORT")
 GROCY_API_KEY = os.getenv("GROCY_API_KEY")
 
 cache = diskcache.Cache('cache')
+grocy = GrocyApiClient(GROCY_URL, GROCY_PORT, GROCY_API_KEY)
