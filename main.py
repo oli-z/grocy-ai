@@ -1,98 +1,26 @@
-from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT
-from models import AIResponseSchema, RecipeResponseSchema
-from config import GROCY_URL, GROCY_PORT, GROCY_API_KEY, logging, cache, grocy
+from config import GROCY_URL, GROCY_PORT, logging, cache, grocy
+from ai_engine import AIEngine
 
 logging.debug("Lade Libraries...")
-import json, requests, datetime, hashlib, os
+import datetime, os
 from jinja2 import Environment, FileSystemLoader
-
-def get_ai_recommendations():
-    stock_json_string = json.dumps(grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)
-    logging.debug(stock_json_string)
-    stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
-    
-    cache_key = f"grocy_ai_warnings_{stock_hash}"    
-
-    cached_response = cache.get(cache_key)
-    if cached_response:
-        logging.info("Ergebnis aus dem lokalen Datei-Cache geladen.")
-        return cached_response
-
-    logging.info("Cache abgelaufen oder nicht verügbar, frage AI ab...")
-    logging.debug("Lade LiteLLM...")
-    from litellm import completion
-
-    AI_MODEL = os.getenv("AI_MODEL")
-
-    messages = [
-        {"role": "system", "content": WARNING_SYSTEM_PROMPT},
-        {"role": "user", "content": WARNING_USER_PROMPT.format(stock_json_string=stock_json_string)}
-    ]
-    try:
-        response = completion(
-            model=AI_MODEL,
-            messages=messages,
-            response_format=AIResponseSchema
-        )
-        
-
-        response_data = AIResponseSchema.model_validate_json(response.choices[0].message.content)
-        response_data.warnings.sort(key=lambda x: x.warning_severity, reverse=True)
-        
-        # In den Cache schreiben
-        cache.set(cache_key, response_data, expire=3600)
-        return response_data
-
-    except Exception as e:
-        logging.error(f"❌ AI-API Fehler (z.B. Rate-Limit erreicht): {e}")
-        # Fallback: Leeres Schema zurückgeben, damit der Report trotzdem generiert wird
-        return AIResponseSchema(warnings=[])
-    except Exception as e:
-        # Fängt alle anderen unerwarteten Fehler ab
-        logging.error(f"❌ Unerwarteter Fehler bei der AI-Abfrage: {e}")
-        return AIResponseSchema(warnings=[])
-
-def get_ai_recipes():
-    stock_json_string = json.dumps(grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)
-    stock_hash = hashlib.md5(stock_json_string.encode('utf-8')).hexdigest()
-    cache_key = f"grocy_ai_recipes_{stock_hash}"    
-
-    cached_response = cache.get(cache_key)
-    if cached_response:
-        logging.info("Rezeptideen aus dem lokalen Datei-Cache geladen.")
-        return cached_response
-
-    logging.info("Generiere neue Rezeptideen mit der AI...")
-    from litellm import completion
-
-    AI_MODEL = os.getenv("AI_MODEL")
-
-    try:
-        response = completion(
-            model=AI_MODEL,
-            messages=[
-                {"role": "system", "content": RECIPE_SYSTEM_PROMPT},
-                {"role": "user", "content": RECIPE_USER_PROMPT.format(stock_json_string=stock_json_string)}
-            ],
-            response_format=RecipeResponseSchema
-        )
-        
-        response_data = RecipeResponseSchema.model_validate_json(response.choices[0].message.content)
-        cache.set(cache_key, response_data, expire=3600)
-        return response_data
-
-    except Exception as e:
-        logging.error(f"❌ Fehler bei der Rezept-Generierung: {e}")
-        return RecipeResponseSchema(recipes=[])
 
 def generate_html_report():
     logging.info("Generiere statischen HTML-Report...")
     
+    logging.info("Starte Generierung des Dashboards...")
+    
+    AI_MODEL = os.getenv("AI_MODEL")
+    engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=AI_MODEL)
+    
+    warnings_data = engine.get_recommendations()
+    recipes_data = engine.get_recipes()
+
     jinja_env = Environment(loader=FileSystemLoader('templates'))
     jinja_template = jinja_env.get_template('overview.html')
     jinja_data = {
-        "ai_warnings": get_ai_recommendations(),
-        "ai_recipes": get_ai_recipes(),
+        "ai_warnings": warnings_data,
+        "ai_recipes": recipes_data,
         "env": {
             "grocy_base_url": GROCY_URL + ":" + GROCY_PORT
         }
