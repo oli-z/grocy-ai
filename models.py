@@ -11,7 +11,7 @@ class ProductWarning(BaseModel):
 
 class AIResponseSchema(BaseModel):
     warnings: List[ProductWarning]
-    description: str = Field(description="Zusammenfassende Beschreibung , wie du den aktuellen Bestand einschätzt, ob gerade viel da ist oder ob ich bald einkaufen muss, und welche generellen Empfehlungen du hast, die nicht in den Details bereits auftauchen.")
+    description: str = Field(description="Zusammenfassende Beschreibung , wie du den aktuellen Bestand einschätzt, ob gerade viel da ist oder ob bzw. wann ich einkaufen muss, und welche generellen Empfehlungen du hast, die nicht in den Details bereits auftauchen.")
 
 class Recipe(BaseModel):
     title: str
