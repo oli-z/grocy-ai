@@ -4,11 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grocy AI Bestandsanalyse</title>
+    <title>grocy.AI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
+        h1 {
+            font-size: 2.5rem;
+            background: #009FFF;
+            /* fallback for old browsers */
+            background: -webkit-linear-gradient(to right, #ec2F4B, #009FFF);
+            /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to right, #ec2F4B, #009FFF);
+            /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 0.5rem 0;
+            display: inline-block;
+        }
+
         .severity-4 {
             color: #d32f2f;
             font-weight: bold;
@@ -80,8 +94,128 @@
         details summary {
             font-weight: bold;
             color: var(--pico-heading-color);
-            margin-bottom: 0;
         }
+
+.topButtons button {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0 !important;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+    margin: 1rem;
+}
+
+        /* --- RESPONSIVE TABLE STACK FOR MOBILE --- */
+        @media (max-width: 768px) {
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                border: 1px solid var(--pico-muted-border-color);
+                border-radius: var(--pico-border-radius);
+                padding: 0;
+                margin-bottom: 1.5rem;
+                background-color: var(--pico-card-background-color);
+                box-shadow: var(--pico-card-box-shadow);
+            }
+
+            td {
+                border-bottom: none;
+                padding: 0.4rem 0.4rem !important;
+                width: 100% !important;
+            }
+
+            td::before {
+                content: attr(data-label);
+                display: block;
+                font-size: 0.75rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                color: var(--pico-muted-color);
+                margin-bottom: 0.1rem;
+            }
+
+            .badge {
+                margin: 0.25rem;
+            }
+        }
+
+        .recipe {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .recipe button {
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .recipe-grid article header {
+            min-height: 5.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .recipe-grid article header strong {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.2;
+        }
+
+
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: inline-block;
+  border-top: 4px solid #ec2F4B;
+  border-right: 4px solid transparent;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+.loader::after {
+  content: '';  
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border-left: 4px solid #009FFF;
+  border-bottom: 4px solid transparent;
+  animation: rotation 0.5s linear infinite reverse;
+}
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+} 
+
     </style>
 </head>
 
@@ -89,23 +223,24 @@
 
     <main class="container">
         <header>
-            <h1>Grocy AI Bestandsanalyse</h1>
+            <h1>grocy.AI</h1>
 
-            <div class="grid">
-                <button @click="loadWarnings(false)" :aria-busy="loadingWarnings">⚠️ Warnungen aktualisieren</button>
-                <button class="secondary" @click="loadRecipes(true)" :aria-busy="loadingRecipes">🎲 Rezepte neu
-                    würfeln</button>
+            <div class="grid topButtons" style="float: right;">
+                <button @click="loadWarnings(false)" :aria-busy="loadingWarnings" data-tooltip="Warnungen aktualisieren"
+                    data-placement="bottom"><span>⟳</span></button>
+                <button @click="loadRecipes(true)" :aria-busy="loadingRecipes" data-tooltip="Rezepte neu generieren"
+                    data-placement="bottom"><span>🎲</span></button>
             </div>
         </header>
 
         <hr>
 
-        <section :aria-busy="loadingWarnings">
+        <section>
             <h2>⚠️ Warnungen und Hinweise</h2>
             <p>Hier findest du eine Übersicht über Produkte, die bald ablaufen oder andere Probleme aufweisen.</p>
-
-            <template x-if="warnings.length > 0">
-                <article>
+            
+            <span class="loader" aria-label="Lade Warnungen..." x-show="loadingWarnings"></span>
+            <template x-if="warnings.length > 0 && !loadingWarnings" :aria-busy="loadingWarnings">
                     <table>
                         <thead>
                             <tr>
@@ -118,24 +253,24 @@
                         <tbody>
                             <template x-for="w in warnings" :key="w.product_id">
                                 <tr :class="'row-sev-' + w.warning_severity">
-                                    <td>
+                                    <td data-label="Priorität">
                                         <span :class="'severity-' + w.warning_severity"
                                             x-text="getSeverityLabel(w.warning_severity)"></span>
                                     </td>
-                                    <td>
+                                    <td data-label="Produkt">
                                         <strong>
                                             <a :href="grocyBaseUrl + '/stockentries?embedded&product=' + w.product_id]"
                                                 x-text="w.product_name" target="_blank"></a>
                                         </strong>
                                     </td>
-                                    <td>
+                                    <td data-label="Analyse & Problem">
                                         <details>
                                             <summary x-text="w.warning_title"></summary>
                                             <p style="margin-top: 10px; font-size: 0.95rem;" x-text="w.warning_text">
                                             </p>
                                         </details>
                                     </td>
-                                    <td>
+                                    <td data-label="Aktion">
                                         <template x-for="action in w.warning_actions">
                                             <span class="badge" :class="badgeMap[action]?.class || 'badge-keine'"
                                                 x-text="badgeMap[action]?.text || '✅ ' + action">
@@ -146,7 +281,6 @@
                             </template>
                         </tbody>
                     </table>
-                </article>
             </template>
 
             <template x-if="warnings.length === 0 && !loadingWarnings">
@@ -156,15 +290,16 @@
 
         <hr style="margin-top: 3rem; margin-bottom: 3rem;">
 
-        <section :aria-busy="loadingRecipes">
+        <section>
             <h2>🍳 Rezeptideen zur Resteverwertung</h2>
             <p>Passend zu deinem aktuellen Kühlschrank-Inhalt zusammengestellt.</p>
 
-            <template x-if="recipes.length > 0">
-                <div class="grid"
+            <span class="loader" aria-label="Lade Rezepte..." x-show="loadingRecipes"></span>
+            <template x-if="recipes.length > 0 && !loadingRecipes" :aria-busy="loadingRecipes">
+                <div class="grid recipe-grid"
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--pico-block-spacing-horizontal);">
                     <template x-for="recipe in recipes">
-                        <article>
+                        <article class="recipe">
                             <header>
                                 <strong x-text="recipe.title"></strong><br>
                                 <small class="muted">⏱️ <span x-text="recipe.prep_time_minutes"></span> Min. | 🧑‍🍳
@@ -260,7 +395,6 @@
                         let response = await fetch(`/api/warnings?refresh=${forceRefresh}`);
                         let data = await response.json();
                         this.warnings = data.warnings || [];
-                        this.updateTimestamp();
                     } catch (error) {
                         console.error("Fehler bei den Warnungen:", error);
                     } finally {
@@ -274,7 +408,6 @@
                         let response = await fetch(`/api/recipes?refresh=${forceRefresh}`);
                         let data = await response.json();
                         this.recipes = data.recipes || [];
-                        this.updateTimestamp();
                     } catch (error) {
                         console.error("Fehler bei den Rezepten:", error);
                     } finally {
