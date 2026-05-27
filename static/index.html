@@ -96,17 +96,17 @@
             color: var(--pico-heading-color);
         }
 
-.topButtons button {
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0 !important;
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0;
-    margin: 1rem;
-}
+        .topButtons button {
+            width: 2.5rem;
+            height: 2.5rem;
+            padding: 0 !important;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+            margin-right: 5rem;
+        }
 
         /* --- RESPONSIVE TABLE STACK FOR MOBILE --- */
         @media (max-width: 768px) {
@@ -184,38 +184,47 @@
 
 
 
-.loader {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: inline-block;
-  border-top: 4px solid #ec2F4B;
-  border-right: 4px solid transparent;
-  box-sizing: border-box;
-  animation: rotation 1s linear infinite;
-}
-.loader::after {
-  content: '';  
-  box-sizing: border-box;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border-left: 4px solid #009FFF;
-  border-bottom: 4px solid transparent;
-  animation: rotation 0.5s linear infinite reverse;
-}
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-} 
+        .loader {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: inline-block;
+            position: relative;
+            border-top: 4px solid #ec2F4B;
+            border-right: 4px solid transparent;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
 
+        .loader::after {
+            content: '';
+            box-sizing: border-box;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border-left: 4px solid #009FFF;
+            border-bottom: 4px solid transparent;
+            animation: rotation 0.5s linear infinite reverse;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+
+        dialog#receiptDialog article {
+            max-width: 95vw;
+            padding: 1.25rem;
+        }
     </style>
 </head>
 
@@ -230,6 +239,8 @@
                     data-placement="bottom"><span>⟳</span></button>
                 <button @click="loadRecipes(true)" :aria-busy="loadingRecipes" data-tooltip="Rezepte neu generieren"
                     data-placement="bottom"><span>🎲</span></button>
+                <button @click="$refs.receiptDialog.showModal()" data-tooltip="Kassenbon hochladen"
+                    data-placement="bottom"><span>📸</span></button>
             </div>
         </header>
 
@@ -238,49 +249,49 @@
         <section>
             <h2>⚠️ Warnungen und Hinweise</h2>
             <p>Hier findest du eine Übersicht über Produkte, die bald ablaufen oder andere Probleme aufweisen.</p>
-            
+
             <span class="loader" aria-label="Lade Warnungen..." x-show="loadingWarnings"></span>
             <template x-if="warnings.length > 0 && !loadingWarnings" :aria-busy="loadingWarnings">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 15%;">Priorität</th>
-                                <th style="width: 25%;">Produkt</th>
-                                <th style="width: 45%;">Analyse & Problem</th>
-                                <th style="width: 15%;">Aktion</th>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Priorität</th>
+                            <th style="width: 25%;">Produkt</th>
+                            <th style="width: 45%;">Analyse & Problem</th>
+                            <th style="width: 15%;">Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="w in warnings" :key="w.product_id">
+                            <tr :class="'row-sev-' + w.warning_severity">
+                                <td data-label="Priorität">
+                                    <span :class="'severity-' + w.warning_severity"
+                                        x-text="getSeverityLabel(w.warning_severity)"></span>
+                                </td>
+                                <td data-label="Produkt">
+                                    <strong>
+                                        <a :href="grocyBaseUrl + '/stockentries?embedded&product=' + w.product_id"
+                                            x-text="w.product_name" target="_blank"></a>
+                                    </strong>
+                                </td>
+                                <td data-label="Analyse & Problem">
+                                    <details>
+                                        <summary x-text="w.warning_title"></summary>
+                                        <p style="margin-top: 10px; font-size: 0.95rem;" x-text="w.warning_text">
+                                        </p>
+                                    </details>
+                                </td>
+                                <td data-label="Aktion">
+                                    <template x-for="action in w.warning_actions">
+                                        <span class="badge" :class="badgeMap[action]?.class || 'badge-keine'"
+                                            x-text="badgeMap[action]?.text || '✅ ' + action">
+                                        </span>
+                                    </template>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="w in warnings" :key="w.product_id">
-                                <tr :class="'row-sev-' + w.warning_severity">
-                                    <td data-label="Priorität">
-                                        <span :class="'severity-' + w.warning_severity"
-                                            x-text="getSeverityLabel(w.warning_severity)"></span>
-                                    </td>
-                                    <td data-label="Produkt">
-                                        <strong>
-                                            <a :href="grocyBaseUrl + '/stockentries?embedded&product=' + w.product_id]"
-                                                x-text="w.product_name" target="_blank"></a>
-                                        </strong>
-                                    </td>
-                                    <td data-label="Analyse & Problem">
-                                        <details>
-                                            <summary x-text="w.warning_title"></summary>
-                                            <p style="margin-top: 10px; font-size: 0.95rem;" x-text="w.warning_text">
-                                            </p>
-                                        </details>
-                                    </td>
-                                    <td data-label="Aktion">
-                                        <template x-for="action in w.warning_actions">
-                                            <span class="badge" :class="badgeMap[action]?.class || 'badge-keine'"
-                                                x-text="badgeMap[action]?.text || '✅ ' + action">
-                                            </span>
-                                        </template>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
+                        </template>
+                    </tbody>
+                </table>
             </template>
 
             <template x-if="warnings.length === 0 && !loadingWarnings">
@@ -366,13 +377,70 @@
         </article>
     </dialog>
 
+    <dialog id="receiptDialog" x-ref="receiptDialog">
+        <article>
+            <header>
+                <a href="#close" aria-label="Schließen" class="close" @click="$refs.receiptDialog.close()"></a>
+                <h3>Kassenbon-Analyse</h3>
+            </header>
+            <form id="receiptForm" x-show="!analyzingReceipt && receiptItems.length === 0">
+                <input type="file" name="receiptImage" accept="image/*" required>
+                <button @click="analyzeReceipt" :disabled="analyzingReceipt">Einlesen</button>
+            </form>
+            <span class="loader" aria-label="Analyisere Kassenbon..." x-show="analyzingReceipt"></span>
+            <template x-if="receiptItems.length > 0 && !analyzingReceipt">
+                <div>
+                    <h4>Erkannte Artikel:</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Anzahl</th>
+                                <th>Name auf Bon</th>
+                                <th>Produktzuordnung</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receiptItemsTableBody">
+                            <template x-for="item in receiptItems" :key="item.receipt_name">
+                                <tr>
+                                    <td><input type="number" min="0" :value="item.amount"></input></td>
+                                    <td x-text="item.receipt_name"></td>
+                                    <td>
+                                        <select x-model="item.mapped_product_id">
+                                            <option value="">-- Produkt zuordnen --</option>
+                                            <template x-for="prod in productCatalog" :key="prod.id">
+                                                <option :value="prod.id" :selected="prod.id === item.mapped_product_id"
+                                                    :class="prod.id === item.mapped_product_id ? 'selected-option' : ''"
+                                                    x-text="prod.name"></option>
+                                            </template>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    <p class="muted">Wenn kein Produkt zugeordnet ist oder die Menge 0 ist, wird das Element nicht
+                        angelegt. Neue Produkte müssen erst im <a
+                            :href="grocyBaseUrl + '/products'">Grocy-Produktkatalog</a> angelegt werden.</p>
+                    <button @click="submitReceipt">Anlegen</button>
+                </div>
+
+            </template>
+        </article>
+
+        <hr />
+
+    </dialog>
+
     <script>
         function grocyApp() {
             return {
                 warnings: [],
                 recipes: [],
+                receiptItems: [],
+                productCatalog: [],
                 loadingWarnings: false,
                 loadingRecipes: false,
+                analyzingReceipt: false,
                 activeRecipe: null,
 
                 grocyBaseUrl: 'http://localhost:8080',
@@ -412,6 +480,90 @@
                         console.error("Fehler bei den Rezepten:", error);
                     } finally {
                         this.loadingRecipes = false;
+                    }
+                },
+
+                async analyzeReceipt(event) {
+                    event.preventDefault();
+                    const form = document.getElementById('receiptForm');
+                    const fileInput = form.querySelector('input[name="receiptImage"]');
+                    const file = fileInput.files[0];
+
+                    if (!file) {
+                        alert("Bitte wähle ein Bild aus.");
+                        return;
+                    }
+                    this.analyzingReceipt = true;
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    try {
+                        const response = await fetch('/api/receipt/analyze', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Serverfehler: ${response.statusText}`);
+                        }
+
+                        const result = await response.json();
+                        this.receiptItems = result.items || [];
+                        this.productCatalog = result.product_catalog || [];
+                        console.log("Analyseergebnis:", result);
+                    } catch (error) {
+                        console.error("Fehler bei der Kassenbon-Analyse:", error);
+                        this.receiptItems = [];
+                        this.productCatalog = [];
+                        this.analyzingReceipt = false;
+                        alert("Fehler bei der Analyse des Kassenbons. Bitte versuche es erneut.");
+                    } finally {
+                        this.analyzingReceipt = false;
+                    }
+                },
+
+                submitReceipt() {
+                    receiptContent = [];
+                    document.getElementById("receiptItemsTableBody").querySelectorAll("tr").forEach(row => {
+                        const amount = row.querySelector("td:nth-child(1) input").value;
+                        const receiptName = row.querySelector("td:nth-child(2)").innerText;
+                        const mappedProductId = row.querySelector("td:nth-child(3) select").value;
+                        if (amount > 0 && mappedProductId) {
+                            receiptContent.push({
+                                amount,
+                                receipt_name: receiptName,
+                                mapped_product_id: mappedProductId
+                            });
+                        }
+                    });
+                    console.log("Zu übermittelnder Kassenbon:", receiptContent);
+
+                    try {
+                        fetch('/api/receipt/submit', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ items: receiptContent })
+                        }).then(response => {
+                            if (!response.ok) {
+                                throw new Error(`Serverfehler: ${response.statusText}`);
+                            }
+                            return response.json();
+                        }).then(data => {
+                            alert("Kassenbon erfolgreich angelegt!");
+                            this.receiptItems = [];
+                            this.productCatalog = [];
+                            this.analyzingReceipt = false;
+                            this.$refs.receiptDialog.close();
+                            this.loadWarnings(); // Warnungen aktualisieren, da sich der Bestand geändert hat
+                        }).catch(error => {
+                            console.error("Fehler beim Einreichen des Kassenbons:", error);
+                            alert("Fehler beim Einreichen des Kassenbons. Bitte versuche es erneut. ", error.message);
+                        });
+                    } catch (error) {
+                        console.error("Fehler beim Einreichen des Kassenbons:", error);
+                        alert("Fehler beim Einreichen des Kassenbons. Bitte versuche es erneut. ", error.message);
                     }
                 },
 

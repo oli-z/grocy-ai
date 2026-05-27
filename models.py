@@ -24,3 +24,12 @@ class Recipe(BaseModel):
 
 class RecipeResponseSchema(BaseModel):
     recipes: List[Recipe]
+
+class ReceiptItem(BaseModel):
+    receipt_name: str = Field(description="Der exakte Text auf dem Kassenzettel (z.B. 'GUT&GÜNSTIG H-MILCH')")
+    amount: float = Field(description="Erkannte Menge/Anzahl auf dem Beleg")
+    mapped_product_id: int | None = Field(description="Die ID aus dem Grocy-Produktkatalog. Null, wenn das Produkt nicht sicher zugeordnet werden kann.")
+    confidence: str = Field(description="Wie sicher ist die Zuordnung? ('hoch', 'mittel', 'gering')")
+
+class ReceiptAnalysisSchema(BaseModel):
+    items: List[ReceiptItem]

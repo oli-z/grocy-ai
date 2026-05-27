@@ -4,3 +4,5 @@ jinja2
 diskcache
 fastapi
 uvicorn[standard]
+python-multipart
+pydantic

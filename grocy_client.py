@@ -11,6 +11,25 @@ class GrocyApiClient:
             "Accept": "application/json"
         }
 
+    def get_products(self, return_fields: list[str] = None) -> list[dict]:
+            """
+            Holt die Stammdaten aller Produkte aus Grocy.
+            Filtert die Rückgabe dynamisch auf die in 'return_fields' angegebenen Keys.
+            """
+
+            if return_fields is None:
+                return_fields = ["id", "name"]
+                
+            response = requests.get(f"{self.base_url}/objects/products", headers=self.headers)
+            response.raise_for_status()
+            
+            all_products = response.json()
+            
+            return [
+                {field: product.get(field) for field in return_fields}
+                for product in all_products
+            ]
+
     def get_inventory(self) -> list:
         """Holt den physischen Bestand inklusive Standorten, MHDs und Notizen."""
         logging.info("Lade Standorte...")

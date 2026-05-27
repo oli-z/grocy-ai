@@ -3,14 +3,40 @@ import hashlib
 import logging
 from litellm import completion
 
-from models import AIResponseSchema, RecipeResponseSchema
-from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT
+from models import AIResponseSchema, RecipeResponseSchema, ReceiptAnalysisSchema
+from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT, RECEIPT_SYSTEM_PROMPT
 
 class AIEngine:
     def __init__(self, grocy_client, cache, ai_model: str):
         self.grocy = grocy_client
         self.cache = cache
         self.ai_model = ai_model
+
+    def analyze_receipt(self, base64_image: str) -> dict:
+        fields_needed = ["id", "name"]
+        product_catalog = self.grocy.get_products(return_fields=fields_needed)
+
+        catalog_json_str = json.dumps(product_catalog, ensure_ascii=False)
+        
+        prompt = RECEIPT_SYSTEM_PROMPT.format(product_catalog_json=catalog_json_str)
+        response = completion(
+            model=self.ai_model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url", 
+                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+                        }
+                    ]
+                }
+            ],
+            response_format=ReceiptAnalysisSchema
+        )
+        
+        return json.loads(response.choices[0].message.content)
 
     def get_recommendations(self, force_refresh: bool = False):
         stock_json_string = json.dumps(self.grocy.get_inventory(), indent=2, sort_keys=True, ensure_ascii=False)

@@ -5,9 +5,9 @@ from models import AIResponseSchema, RecipeResponseSchema
 from ai_engine import AIEngine
 
 logging.debug("Lade Libraries...")
-import datetime, os
+import datetime, os, base64
 from jinja2 import Environment, FileSystemLoader
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -73,5 +73,52 @@ async def api_get_warnings(refresh: bool = False):
 async def api_get_recipes(refresh: bool = False):
     """Liefert nur die Rezepte als reines JSON zurück."""
     return engine.get_recipes(force_refresh=refresh)
+
+@app.post("/api/receipt/analyze")
+async def analyze_receipt(file: UploadFile = File(...)):
+    """
+    Nimmt ein Bild des Kassenbons entgegen, wandelt es in Base64 um
+    und lässt es durch die Gemini-Engine gegen den Grocy-Katalog prüfen.
+    """
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400, 
+            detail="Ungültiges Dateiformat. Bitte lade ein Bild (JPEG/PNG) hoch."
+        )
+    
+    try:
+        image_bytes = await file.read()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        analysis_result = engine.analyze_receipt(base64_image)
+        analysis_result["product_catalog"] = engine.grocy.get_products(return_fields=["id", "name"])
+        return analysis_result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Fehler bei der Kassenbon-Analyse: {str(e)}"
+        )
+
+@app.post("/api/receipt/submit")
+async def submit_receipt_analysis(analysis_result: dict):
+    """
+    Überträgt die Analyseergebnisse des Kassenbons an den Grocy-Katalog.
+    """
+    try:
+        print("Zu übermittelnder Kassenbon:", analysis_result)
+        # todo: Kassenbon in Grocy
+        raise HTTPException(
+            status_code=501,
+            detail="Die Übertragung der Kassenbon-Analyse an Grocy ist noch nicht implementiert."
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Fehler bei der Übertragung der Kassenbon-Analyse: {str(e)}"
+        )
 
 app.mount("/", StaticFiles(directory="static", html="index.html"), name="static")

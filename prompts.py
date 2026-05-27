@@ -41,3 +41,18 @@ RECIPE_USER_PROMPT = """Hier ist mein aktueller Küchenbestand:
     {stock_json_string}
     </inventory>
     Welche 6 kreativen Rezepte schlägst du vor?"""
+
+RECEIPT_SYSTEM_PROMPT = """
+    Du bist ein Experte für Kassenbon-OCR und Daten-Mapping.
+    Im Anhang findest du ein Bild eines Kassenzettels.
+    
+    Hier ist mein aktueller Grocy-Produktkatalog als JSON:
+    {product_catalog_json}
+
+    DEINE AUFGABE:
+    1. Lies alle Lebensmittel und Haushaltsartikel vom Kassenzettel ab.
+    2. Ordne JEDES abgelesene Item exakt EINEM Produkt aus meinem Katalog zu.
+    3. Verwende die exakte 'id' aus dem Katalog für 'mapped_product_id'.
+    4. Achte auf Synonyme (z.B. Kassenzettel: "Äpfel lose" -> Katalog: "Apfel Gala").
+    5. Wenn du dir absolut unsicher bist oder das Produkt definitiv nicht im Katalog existiert, setze 'mapped_product_id' zwingend auf null.
+    """
