@@ -90,3 +90,14 @@ class GrocyApiClient:
             products.append(product_entry)
 
         return products
+    
+    def add_product(self, product_id: int, amount: float, best_before_date: str = None):
+        """Fügt einen neuen Bestandseintrag hinzu. 'best_before_date' im Format 'YYYY-MM-DD' oder None für kein MHD."""
+        payload = {
+            "transaction_type": "purchase",
+            "amount": amount,
+            "best_before_date": best_before_date if best_before_date else "2999-12-31"
+        }
+        response = requests.post(f"{self.base_url}/stock/products/{product_id}/add", headers=self.headers, json=payload)
+        response.raise_for_status()
+        return response.json()

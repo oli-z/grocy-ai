@@ -551,7 +551,16 @@
                             }
                             return response.json();
                         }).then(data => {
-                            alert("Kassenbon erfolgreich angelegt!");
+                            console.log("Ergebnis vom Server:", data);
+                            alert_string = "Kassenbon erfolgreich eingelesen\n\nErfolgreiche Produkte:\n";
+                            data.added.forEach(p => {
+                                alert_string += `- ${p.amount}x ${p.name}\n`;
+                            });
+                            alert_string += "\nFehlgeschlagene Produkte (nicht angelegt):\n";
+                            data.failed.forEach(p => {
+                                alert_string += `- ${p.name}: ${p.error}\n`;
+                            });
+                            alert(alert_string);
                             this.receiptItems = [];
                             this.productCatalog = [];
                             this.analyzingReceipt = false;

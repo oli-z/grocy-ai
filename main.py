@@ -108,11 +108,22 @@ async def submit_receipt_analysis(analysis_result: dict):
     """
     try:
         print("Zu übermittelnder Kassenbon:", analysis_result)
-        # todo: Kassenbon in Grocy
-        raise HTTPException(
-            status_code=501,
-            detail="Die Übertragung der Kassenbon-Analyse an Grocy ist noch nicht implementiert."
-        )
+        products_added = []
+        products_failed = []
+        for item in analysis_result.get("items", []):
+            try:
+                grocy.add_product(product_id=item["mapped_product_id"], amount=item["amount"])
+                product_name = item["receipt_name"]
+                products_added.append({"name": product_name, "id": item["mapped_product_id"], "amount": item["amount"]})
+            except Exception as e:
+                products_failed.append({"name": item["receipt_name"], "error": str(e)})
+        
+        return {
+            "status": "success",
+            "added": products_added,
+            "failed": products_failed
+        }
+
     except HTTPException:
         raise
     except Exception as e:
