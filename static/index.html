@@ -460,7 +460,7 @@
                 async loadWarnings(forceRefresh) {
                     this.loadingWarnings = true;
                     try {
-                        let response = await fetch(`/api/warnings?refresh=${forceRefresh}`);
+                        let response = await fetch(`./api/warnings?refresh=${forceRefresh}`);
                         let data = await response.json();
                         this.warnings = data.warnings || [];
                     } catch (error) {
@@ -473,7 +473,7 @@
                 async loadRecipes(forceRefresh) {
                     this.loadingRecipes = true;
                     try {
-                        let response = await fetch(`/api/recipes?refresh=${forceRefresh}`);
+                        let response = await fetch(`./api/recipes?refresh=${forceRefresh}`);
                         let data = await response.json();
                         this.recipes = data.recipes || [];
                     } catch (error) {
@@ -498,7 +498,7 @@
                     formData.append("file", file);
 
                     try {
-                        const response = await fetch('/api/receipt/analyze', {
+                        const response = await fetch('./api/receipt/analyze', {
                             method: 'POST',
                             body: formData
                         });
@@ -539,7 +539,7 @@
                     console.log("Zu übermittelnder Kassenbon:", receiptContent);
 
                     try {
-                        fetch('/api/receipt/submit', {
+                        fetch('./api/receipt/submit', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
