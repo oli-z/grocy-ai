@@ -45,7 +45,7 @@ def generate_html_report():
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=os.getenv("AI_MODEL"))
+engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=os.getenv("AI_MODEL"), ai_api_base=os.getenv("AI_API_BASE"))
 
 # @app.get("/")
 # async def dashboard(request: Request, refresh: bool = False):

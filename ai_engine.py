@@ -7,10 +7,11 @@ from models import AIResponseSchema, RecipeResponseSchema, ReceiptAnalysisSchema
 from prompts import WARNING_SYSTEM_PROMPT, WARNING_USER_PROMPT, RECIPE_SYSTEM_PROMPT, RECIPE_USER_PROMPT, RECEIPT_SYSTEM_PROMPT
 
 class AIEngine:
-    def __init__(self, grocy_client, cache, ai_model: str):
+    def __init__(self, grocy_client, cache, ai_model: str, ai_api_base: str = None):
         self.grocy = grocy_client
         self.cache = cache
         self.ai_model = ai_model
+        self.ai_api_base = ai_api_base
 
     def analyze_receipt(self, base64_image: str) -> dict:
         fields_needed = ["id", "name"]
@@ -21,6 +22,7 @@ class AIEngine:
         prompt = RECEIPT_SYSTEM_PROMPT.format(product_catalog_json=catalog_json_str)
         response = completion(
             model=self.ai_model,
+            api_base=self.ai_api_base,
             messages=[
                 {
                     "role": "user",
@@ -61,6 +63,7 @@ class AIEngine:
         try:
             response = completion(
                 model=self.ai_model,
+                api_base=self.ai_api_base,
                 messages=messages,
                 response_format=AIResponseSchema
             )
@@ -92,6 +95,7 @@ class AIEngine:
         try:
             response = completion(
                 model=self.ai_model,
+                api_base=self.ai_api_base,
                 messages=[
                     {"role": "system", "content": RECIPE_SYSTEM_PROMPT},
                     {"role": "user", "content": RECIPE_USER_PROMPT.format(stock_json_string=stock_json_string)}
