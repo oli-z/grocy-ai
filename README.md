@@ -54,10 +54,9 @@ Die Konfiguration in `docker-compose.yml` veröffentlicht Port `8000`. In der .e
 | GROCY_API_KEY | API-Key für Zugriff auf Grocy | ja |
 | GROCY_URL | Base-URL für Grocy ohne folgenden "/" | ja |
 | GROCY_PORT | Port, auf welchem Grocy läuft | ja |
-
-| AI_MODEL | das verwendete KI-Modell in einem Format für LiteLLM |
-| GEMINI_API_KEY | API-Key je nach verwendetem Modell | je nach verwendetem Modell |
-| OPENAI_API_KEY | API-Key je nach verwendetem Modell | je nach verwendetem Modell |
+| LLM_AI_MODEL | das verwendete KI-Modell in einem Format für LiteLLM | ja |
+| LLM_API_KEY | API-Key je nach verwendetem Modell | je nach verwendetem Modell |
+| LLM_BASE_URL | Base-URL, z.B. für Verwendung mit lokaler Ollama-Instanz | je nach verwendetem Modell |
 | LOG_LEVEL | Level der Logausgabe, z.B. "INFO" | nein |
 | PORT | nur Docker: Port, auf welchem der Server exposed wird | ja |
 
