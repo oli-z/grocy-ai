@@ -1,6 +1,6 @@
 from aiohttp import request
 
-from config import logging, cache, grocy
+from config import logging, cache, grocy, get_config
 from models import AIResponseSchema, RecipeResponseSchema
 from ai_engine import AIEngine
 
@@ -16,8 +16,8 @@ def generate_html_report():
     
     logging.info("Starte Generierung des Dashboards...")
     
-    AI_MODEL = os.getenv("AI_MODEL")
-    engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=AI_MODEL)
+    LLM_AI_MODEL = get_config("LLM_AI_MODEL")
+    engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=LLM_AI_MODEL)
     
     warnings_data = engine.get_recommendations()
     recipes_data = engine.get_recipes()
@@ -45,7 +45,7 @@ def generate_html_report():
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=os.getenv("AI_MODEL"), ai_api_base=os.getenv("AI_API_BASE"))
+engine = AIEngine(grocy_client=grocy, cache=cache, ai_model=get_config("LLM_AI_MODEL"), base_url=get_config("LLM_BASE_URL"), api_key=get_config("LLM_API_KEY"))
 
 # @app.get("/")
 # async def dashboard(request: Request, refresh: bool = False):
