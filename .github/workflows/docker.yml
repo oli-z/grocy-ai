@@ -1,23 +1,27 @@
-name: Build and Push to GHCR
+name: CI/CD Pipeline (Build, Push & Release)
 
 on:
   push:
     branches:
       - main
       - dev
+    tags:
+      - 'v*'
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       packages: write
-      contents: read
+      contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up QEMU
+      - name: Set up QEMU (für ARM/Raspberry Pi)
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -30,11 +34,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Calculate Docker tags
+        id: meta
+        run: |
+          REGISTRY="ghcr.io/${{ github.repository }}"
+          # GHCR verlangt zwingend Kleinschreibung für Image-Namen
+          REGISTRY=$(echo "$REGISTRY" | tr '[:upper:]' '[:lower:]')
+          
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "tags=${REGISTRY}:${VERSION},${REGISTRY}:latest" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            echo "tags=${REGISTRY}:latest" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "dev" ]; then
+            echo "tags=${REGISTRY}:dev" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name == 'main' && 'latest' || 'dev' }}
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Create GitHub Release
+        if: steps.meta.outputs.is_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
