@@ -57,6 +57,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Create GitHub Release
         if: steps.meta.outputs.is_release == 'true'
@@ -67,23 +69,24 @@ jobs:
       - name: Update HA Addon Repository
         if: steps.meta.outputs.is_release == 'true'
         run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "## Version $VERSION" > temp_changelog.md
+          
+          git log $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")..HEAD --oneline --pretty=format:"* %s" >> ../temp_changelog.md || echo "* Release v$VERSION" >> ../temp_changelog.md
+          echo -e "\n" >> temp_changelog.md
+
           git clone https://x-access-token:${{ secrets.HA_REPO_TOKEN }}@github.com/oli-z/homeassistant-apps.git ha-repo
           cd ha-repo
           
-          VERSION="${GITHUB_REF#refs/tags/v}"
           sed -i "s/^version: .*/version: \"$VERSION\"/" grocy-ai/config.yaml
           
-          echo "## Version $VERSION" > temp_changelog.md
-          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --oneline --pretty=format:"* %s" >> temp_changelog.md
-          echo -e "\n" >> temp_changelog.md
-          
           if [ -f grocy-ai/CHANGELOG.md ]; then
-            cat grocy-ai/CHANGELOG.md >> temp_changelog.md
+            cat grocy-ai/CHANGELOG.md >> ../temp_changelog.md
           fi
-          mv temp_changelog.md grocy-ai/CHANGELOG.md
+          mv ../temp_changelog.md grocy-ai/CHANGELOG.md
           
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "bump: grocy-ai to v$VERSION"
-          git push origin main
+          git push https://x-access-token:${{ secrets.HA_REPO_TOKEN }}@github.com/oli-z/homeassistant-apps.git main
