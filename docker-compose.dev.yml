@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   grocy-ai:
-    image: ghcr.io/oli-z/grocy-ai:latest
-    container_name: grocy_ai
+    build: .
+    container_name: grocy_ai_dev
     ports:
       - "${PORT:-8000}:8000"
     env_file:
