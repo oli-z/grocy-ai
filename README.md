@@ -70,6 +70,14 @@ Die Konfiguration in `docker-compose.yml` veröffentlicht Port `8000`. In der .e
 - `prompts.py` - Prompt-Templates für Warnungen, Rezepte und Receipt-Analyse
 - `static/` - Frontend
 
+## getestete Modelle
+
+| Modell | Rezeptgenerierung | Kassenzettel-Erkennung | Hinweise |
+| --- | --- | --- | --- |
+| gemini/gemini-flash-latest | gut | gut | kostenlos über Google AI Studio nutzbar |
+| gemini/gemini-flash-lite-latest | gut | gut | kostenlos über Google AI Studio nutzbar |
+
+
 ## Hinweise
 
 - Ergebnisse werden lokal im Cache gespeichert, um wiederholte LLM-Abfragen zu reduzieren.
