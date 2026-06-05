@@ -249,7 +249,8 @@
         <section>
             <h2>⚠️ Warnungen und Hinweise</h2>
             <p>Hier findest du eine Übersicht über Produkte, die bald ablaufen oder andere Probleme aufweisen.</p>
-
+            <hr>
+            <p x-text="description" style="background-color: #e8f6ff; border-radius: 7px; padding: 0.25rem;"></p>
             <span class="loader" aria-label="Lade Warnungen..." x-show="loadingWarnings"></span>
             <template x-if="warnings.length > 0 && !loadingWarnings" :aria-busy="loadingWarnings">
                 <table>
@@ -462,6 +463,7 @@
                     try {
                         let response = await fetch(`./api/warnings?refresh=${forceRefresh}`);
                         let data = await response.json();
+                        this.description = data.description || "";  
                         this.warnings = data.warnings || [];
                     } catch (error) {
                         console.error("Fehler bei den Warnungen:", error);
