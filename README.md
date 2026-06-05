@@ -1,5 +1,8 @@
 # grocy.AI
 
+[![Build and Push to GHCR](https://github.com/oli-z/grocy-ai/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/oli-z/grocy-ai/actions/workflows/docker.yml) (main)
+[![Build and Push to GHCR](https://github.com/oli-z/grocy-ai/actions/workflows/docker.yml/badge.svg?branch=dev)](https://github.com/oli-z/grocy-ai/actions/workflows/docker.yml) (dev)
+
 AI-gestützte Erweiterung für [Grocy](https://grocy.info/), die Bestandsprobleme erkennt, Rezeptideen generiert und Kassenbons automatisch einliest.
 
 ## Überblick
@@ -18,6 +21,16 @@ AI-gestützte Erweiterung für [Grocy](https://grocy.info/), die Bestandsproblem
 - Ein AI-Modell (z. B. `gemini/gemini-2.5-flash`) oder ein kompatibler OpenAI-Endpoint (z.B. kostenlos über Google AI Studio)
 
 ## Installation
+
+### Home Assistant App
+
+[![Repository in Home Assistant hinzufügen](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Foli-z%2Fgrocy-ai)
+
+### Docker
+
+Repo klonen und per Compose starten
+
+### lokal
 
 1. Repository klonen
 
@@ -69,6 +82,14 @@ Die Konfiguration in `docker-compose.yml` veröffentlicht Port `8000`. In der .e
 - `grocy_client.py` - Grocy-API-Zugriff
 - `prompts.py` - Prompt-Templates für Warnungen, Rezepte und Receipt-Analyse
 - `static/` - Frontend
+
+## getestete Modelle
+
+| Modell | Rezeptgenerierung | Kassenzettel-Erkennung | Hinweise |
+| --- | --- | --- | --- |
+| gemini/gemini-flash-latest | gut | gut | kostenlos über Google AI Studio nutzbar |
+| gemini/gemini-flash-lite-latest | gut | gut | kostenlos über Google AI Studio nutzbar |
+
 
 ## Hinweise
 
