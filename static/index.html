@@ -454,8 +454,19 @@
                 },
 
                 init() {
+                    this.loadGrocyConfig();
                     this.loadWarnings(false);
                     this.loadRecipes(false);
+                },
+
+                async loadGrocyConfig() {
+                    try {
+                        let response = await fetch('./api/config');
+                        let data = await response.json();
+                        this.grocyBaseUrl = data.grocy_base_url || this.grocyBaseUrl;
+                    } catch (error) {
+                        console.error("Fehler beim Laden der Konfiguration:", error);
+                    }
                 },
 
                 async loadWarnings(forceRefresh) {
