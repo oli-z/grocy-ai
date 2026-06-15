@@ -537,6 +537,7 @@
 
                 submitReceipt() {
                     receiptContent = [];
+                    receiptSkippedItems = [];
                     document.getElementById("receiptItemsTableBody").querySelectorAll("tr").forEach(row => {
                         const amount = row.querySelector("td:nth-child(1) input").value;
                         const receiptName = row.querySelector("td:nth-child(2)").innerText;
@@ -546,6 +547,11 @@
                                 amount,
                                 receipt_name: receiptName,
                                 mapped_product_id: mappedProductId
+                            });
+                        } else {
+                            receiptSkippedItems.push({
+                                amount,
+                                receipt_name: receiptName
                             });
                         }
                     });
@@ -557,7 +563,7 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ items: receiptContent })
+                            body: JSON.stringify({ items: receiptContent, skipped_items: receiptSkippedItems })
                         }).then(response => {
                             if (!response.ok) {
                                 throw new Error(`Serverfehler: ${response.statusText}`);
@@ -565,14 +571,29 @@
                             return response.json();
                         }).then(data => {
                             console.log("Ergebnis vom Server:", data);
-                            alert_string = "Kassenbon erfolgreich eingelesen\n\nErfolgreiche Produkte:\n";
-                            data.added.forEach(p => {
-                                alert_string += `- ${p.amount}x ${p.name}\n`;
-                            });
-                            alert_string += "\nFehlgeschlagene Produkte (nicht angelegt):\n";
-                            data.failed.forEach(p => {
-                                alert_string += `- ${p.name}: ${p.error}\n`;
-                            });
+                            
+                            if (data.added.length > 0) {
+                                alert_string = "Kassenbon erfolgreich eingelesen\n\nErfolgreiche Produkte:\n";
+                                data.added.forEach(p => {
+                                    alert_string += `- ${p.amount}x ${p.name}\n`;
+                                });
+                            }
+
+                            if (data.failed.length > 0) {
+                                alert_string += "\nFehlgeschlagene Produkte (nicht angelegt):\n";
+                                data.failed.forEach(p => {
+                                    alert_string += `- ${p.name}: ${p.error}\n`;
+                                });
+                            }
+
+                            if (data.skipped.length > 0) {
+                                alert_string += "\nÜbersprungene Produkte (nicht angelegt):\n";
+                                data.skipped.forEach(p => {
+                                    alert_string += `- ${p.receipt_name} (Menge: ${p.amount})\n`;
+                                });
+                            }
+                            
+
                             alert(alert_string);
                             this.receiptItems = [];
                             this.productCatalog = [];

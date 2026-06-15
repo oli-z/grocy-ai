@@ -119,6 +119,8 @@ async def submit_receipt_analysis(analysis_result: dict):
         print("Zu übermittelnder Kassenbon:", analysis_result)
         products_added = []
         products_failed = []
+        products_skipped = analysis_result.get("skipped_items", [])
+        
         for item in analysis_result.get("items", []):
             try:
                 grocy.add_product(product_id=item["mapped_product_id"], amount=item["amount"])
@@ -130,7 +132,8 @@ async def submit_receipt_analysis(analysis_result: dict):
         return {
             "status": "success",
             "added": products_added,
-            "failed": products_failed
+            "failed": products_failed,
+            "skipped": products_skipped
         }
 
     except HTTPException:
