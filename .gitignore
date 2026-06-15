@@ -7,3 +7,4 @@ logs/*
 output/*
 test/*
 test.py
+debug.log
