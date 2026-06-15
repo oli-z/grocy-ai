@@ -79,7 +79,6 @@ jobs:
           cd ha-repo
           
           sed -i "s/^version: .*/version: \"$VERSION\"/" grocy-ai/config.yaml
-          sed -i "s|^image: .*|image: \"ghcr.io/oli-z/grocy-ai:$VERSION\"|" grocy-ai/config.yaml
           
           if [ -f grocy-ai/CHANGELOG.md ]; then
             cat grocy-ai/CHANGELOG.md >> ../temp_changelog.md
