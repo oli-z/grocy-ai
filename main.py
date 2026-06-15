@@ -74,6 +74,15 @@ async def api_get_recipes(refresh: bool = False):
     """Liefert nur die Rezepte als reines JSON zurück."""
     return engine.get_recipes(force_refresh=refresh)
 
+@app.get("/api/config")
+async def api_get_config():
+    """Liefert die Konfiguration als reines JSON zurück."""
+    return {
+        "llm_ai_model": get_config("LLM_AI_MODEL"),
+        "llm_base_url": get_config("LLM_BASE_URL"),
+        "grocy_base_url": get_config("GROCY_URL") + ":" + get_config("GROCY_PORT"),
+    }
+
 @app.post("/api/receipt/analyze")
 async def analyze_receipt(file: UploadFile = File(...)):
     """
