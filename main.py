@@ -80,7 +80,7 @@ async def api_get_config():
     return {
         "llm_ai_model": get_config("LLM_AI_MODEL"),
         "llm_base_url": get_config("LLM_BASE_URL"),
-        "grocy_base_url": get_config("GROCY_URL") + ":" + get_config("GROCY_PORT"),
+        "grocy_base_url": get_config("GROCY_URL") + ":" + str(get_config("GROCY_PORT")),
     }
 
 @app.post("/api/receipt/analyze")
